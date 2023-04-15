@@ -8,6 +8,7 @@
    pip install fire
 
    ######## Start
+   cd src/
    python server.py run_server  --port 12345
 
    python server.py test
