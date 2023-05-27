@@ -119,9 +119,11 @@ def skype_init():
    sk = Skype(user1, pass1)
 
 
-def run_chatweb():
+def run_chat():
    """
-   
+       python cchat.py run_chat 
+
+
    """
    import asyncio
    from EdgeGPT import Chatbot, ConversationStyle
@@ -135,9 +137,17 @@ def run_chatweb():
    
    asyncio.run(main())
 
+import asyncio
+from EdgeGPT import Chatbot, ConversationStyle
+import json
+from colorama import init as colorama_init
+from colorama import Fore
+from colorama import Style
+import os
 
    
 async def main():
+  
        bot = await Chatbot.create(cookies=json.loads(open("cookies.json","r").read()) if os.path.exists("cookies.json") else None)
        print("Send bye to exit!")
        while True:
@@ -159,6 +169,4 @@ async def main():
 #######################################################################################
 if __name__ == '__main__':
     fire.Fire()
-
-
 
