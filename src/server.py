@@ -119,6 +119,42 @@ def skype_init():
    sk = Skype(user1, pass1)
 
 
+def run_chatweb():
+   """
+   
+   """
+   import asyncio
+   from EdgeGPT import Chatbot, ConversationStyle
+   import json
+   from colorama import init as colorama_init
+   from colorama import Fore
+   from colorama import Style
+   import os
+
+   colorama_init()
+   
+   asyncio.run(main())
+
+
+   
+async def main():
+       bot = await Chatbot.create(cookies=json.loads(open("cookies.json","r").read()) if os.path.exists("cookies.json") else None)
+       print("Send bye to exit!")
+       while True:
+           iput = input(f"{Fore.GREEN}#Me:{Style.RESET_ALL} ")
+           if iput.lower() in ["exit","quite","bye","tata"]:
+               await bot.close()
+               print(f"{Fore.BLUE}#BingAI:{Style.RESET_ALL} okay!, message me again when needed")
+               break
+           result = await bot.ask(prompt=iput, conversation_style=ConversationStyle.creative)
+           if result["item"]["result"]["value"] == "Success":
+               print(f"{Fore.BLUE}#BingAI:{Style.RESET_ALL}", result["item"]["messages"][-1]["text"])
+           else:
+               print(f"{Fore.RED}Error occured!{Style.RESET_ALL}")
+
+      
+      
+      
 
 #######################################################################################
 if __name__ == '__main__':
