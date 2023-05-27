@@ -7,11 +7,17 @@
    pip install py38.txt
    pip install fire
 
-   ######## Start
+   ######## Start in shell scriupt
+   run_skype.sh 
+   
+   export skype_user="yourName"
+   export skype_pass="yourpass"
+   export skype_chatid="thebingChatID"   
    cd src/
    python server.py run_server  --port 12345
 
-   python server.py test
+
+   # python server.py test
 
 
 
