@@ -21,12 +21,19 @@
 
 
 
+
+pip install EdgeGPT --upgrade
+
 """
 import fire, os
 from flask import Flask, request
 from skpy import Skype, SkypeAuthException, SkypeApiException, SkypeEventLoop
 from getpass import getpass
 import time
+from utilmy import (log, os_makedirs, glob_glob, date_now, json_load, json_save
+
+) 
+
 
 
 ########################################################################3########
@@ -46,7 +53,7 @@ def test():
     time.sleep(8)
     mlist= ch.getMsgs() # retrieve recent message
     m0 = mlist[0].markup
-    print(m0)
+    log(m0)
 
 
 ##############################################################################
@@ -103,14 +110,14 @@ def run_server(port=12354):
 def run_loop_event():
     sk = MySkype(user1, pass1, autoAck=True)
     sk.subscribePresence() # Only if you need contact presence events.
-    print('start')
+    log('start')
     sk.loop()
 
 #######################################################################################
 ########## utils ######################################################################
 class MySkype(SkypeEventLoop):
     def onEvent(self, event):
-        print(repr(event))
+        log(repr(event))
 
 
 def skype_init():
@@ -119,52 +126,141 @@ def skype_init():
    sk = Skype(user1, pass1)
 
 
-def run_chat():
-   """
-       python cchat.py run_chat 
 
 
-   """
-   import asyncio
-   from EdgeGPT import Chatbot, ConversationStyle
-   import json
-   from colorama import init as colorama_init
-   from colorama import Fore
-   from colorama import Style
-   import os
 
-   colorama_init()
-   
-   asyncio.run(main())
-
-import asyncio
+#########################################################################################
+import asyncio, os
 from EdgeGPT import Chatbot, ConversationStyle
 import json
 from colorama import init as colorama_init
-from colorama import Fore
-from colorama import Style
-import os
+from colorama import Fore, Style
 
-   
-async def main():
-  
-       bot = await Chatbot.create(cookies=json.loads(open("cookies.json","r").read()) if os.path.exists("cookies.json") else None)
-       print("Send bye to exit!")
+
+
+def run_chat():
+   """
+       python cchat.py run_chat 
+       pip install EdgeGPT --upgrade
+
+   """
+   colorama_init()
+   asyncio.run(main())
+
+
+
+def json_update(ddict, dirout=None):
+
+  dirout = os.path.abspath(dirout)
+  try :
+     d0 = json_load(dirout +"/chathisto.json")
+     if d0 is None or 'histo' not in d0:
+        d0 = {'histo': []}
+
+     d0['histo'].append(ddict)
+     json_save(d0, dirout +"/chathisto.json" )
+  except Exception as e :
+     log('cannot update chathisto.json', e)
+
+
+async def main(dirsave="histo/"):       
+       ymd = date_now(fmt="%Y%m%d")
+       ym  = date_now(fmt="%Y%m")
+       dirout = f"{dirsave}/{ym}/{ymd}/"
+       os_makedirs(dirout)
+
+       bot = await Chatbot.create(cookies=json_load("cookies.json") if os.path.exists("cookies.json") else None)
+       log("Send qq  to exit!")
        while True:
+           log("--------------------------------------------")
            iput = input(f"{Fore.GREEN}#Me:{Style.RESET_ALL} ")
-           if iput.lower() in ["exit","quite","bye","tata"]:
+           if iput.lower() in ["qq", "exit","quit"]:
                await bot.close()
-               print(f"{Fore.BLUE}#BingAI:{Style.RESET_ALL} okay!, message me again when needed")
-               break
+               log(f"{Fore.BLUE}#GPT:{Style.RESET_ALL} message me again when needed")
+               return None 
+
+           log("-----waiting------")    
            result = await bot.ask(prompt=iput, conversation_style=ConversationStyle.creative)
            if result["item"]["result"]["value"] == "Success":
-               print(f"{Fore.BLUE}#BingAI:{Style.RESET_ALL}", result["item"]["messages"][-1]["text"])
-           else:
-               print(f"{Fore.RED}Error occured!{Style.RESET_ALL}")
+               msg = result["item"]["messages"][-1]["text"]
+               log(f"{Fore.RED}#Bard:{Style.RESET_ALL}",  f"{Fore.RED}{msg}{Style.RESET_ALL}" )
 
-      
-      
-      
+               ymhs = date_now(fmt='%Y%m%d-%H:%M:%S')
+               json_update({'dt':ymhs   , 'in': iput, 'out': msg}, dirout=dirout)
+           else:
+               log(f"{Fore.RED}Error occured!{Style.RESET_ALL}")
+
+
+
+               
+               
+
+
+
+##################################################################################################      
+from ImageGen import ImageGen
+import argparse
+import json
+
+async def async_image_gen(args) -> None:
+    async with ImageGenAsync(args.U, args.quiet) as image_generator:
+        images = await image_generator.get_images(args.prompt)
+        await image_generator.save_images(images, output_dir=args.dirout)
+
+
+def image2(prompt):
+   """
+       python cchat.py  image --prompt "blue bike in city landscape" --dirout zimg/   --mode 1 
+
+
+   """
+   from EdgeGPT import ImageQuery
+   q=ImageQuery("blue bike in city landscape")
+
+
+
+
+def image(cookie_file=None, prompt="bike in black", dirout="ztmp/", mode='async', quiet=1):
+    """
+       python cchat.py  image --prompt "blue bike in city landscape" --dirout zimg/   --mode 1 
+
+    """
+    from utilmy import os_makedirs 
+    from box import Box
+    args = Box({})
+
+    args.cookie_file = None 
+    args.asyncio     = True if mode =='async' else False 
+    args.U = None
+    args.quiet = True if quiet == 1 else False
+
+    args.prompt = prompt
+    args.dirout = dirout 
+
+    os_makedirs(dirout)
+   
+
+    # # Load auth cookie
+    # with open(args.cookie_file, encoding="utf-8") as file:
+    #     cookie_json = json.load(file)
+    #     for cookie in cookie_json:
+    #         if cookie.get("name") == "_U":
+    #             args.U = cookie.get("value")
+    #             break
+
+    # if args.U is None:
+    #     raise Exception("Could not find auth cookie")
+
+    if not args.asyncio:
+        # Create image generator
+        image_generator = ImageGen(args.U, args.quiet)
+        image_generator.save_images(
+            image_generator.get_images(args.prompt),
+            output_dir=args.dirout,
+        )
+    else:
+        asyncio.run(async_image_gen(args))
+
 
 #######################################################################################
 if __name__ == '__main__':
